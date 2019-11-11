@@ -4,27 +4,64 @@ author: "Feiya Wang"
 date: "11/11/2019"
 output: html_document
 ---
+***
+## Group Project--Species Distribution Model
+
+***
+It is a Group projetc worked by Majo, Frank and Feiya
+
+
+
+
+>Introduction: short paragraph and an image
+
+>Packages to be used: install.packages(c(’raster’, ’rgdal’, ’dismo’, ’rJava’)) 
+Raster: Geographic Data Analysis and Modeling
+Rgdal: Bindings for the 'Geospatial' Data Abstraction Library
+Dismo: Species Distribution Modeling
+rJava: Low-Level R to Java Interface
+
+# Data preparation - due Monday 18th
+
+>Species occurrence data
+
+>Importing data: Species occurrence data, plot map- majo
+
+>Data cleaning-majo
+
+>Duplicate records - Frank
+
+>cross-checking
+
+
+>Absence and background points: Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data--Feiya 
+ 
+# Environmental data Due 25th
+
+>Raster data
+
+>Extracting values from rasters
+
+# Model fitting, prediction, and evaluation
+>Model fitting
+
+>Model prediction
+
+>Model evaluation
+
+>Types of models
+
+# Generalized Linear Models: example
+
+
+
+
+
+
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
