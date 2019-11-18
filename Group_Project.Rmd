@@ -27,9 +27,102 @@ rJava: Low-Level R to Java Interface
 
 >Species occurrence data
 
+```{r installing packages}
+install.packages("raster")
+install.packages("dismo")
+install.packages("rgdal")
+install.packages("rJava")
+```
+
+Importing data from a database
+
+```{r loading package dismo}
+library(dismo)
+```
+
+
+```{r}
+```
+
+
+```{r}
+acaule <- gbif("solanum", "acaule*", geo=FALSE)
+```
+
+load the saved S. acaule data
+```{r}
+data("acaule")
+```
+how many rows and colums?
+
+```{r}
+dim(acaule)
+```
+
+Select the records that have longitude and latitude data
+
+
+```{r}
+colnames(acaule)
+```
+
+
+Subetting the data that have longitude and latitude
+
+
+```{r}
+acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
+dim(acgeo)
+```
+show some values
+
+```{r}
+acgeo[1:4, c(1:5,7:10)] #removing locality
+```
+
 >Importing data: Species occurrence data, plot map- majo
 
+```{r}
+library(maptools)
+```
+
+
+```{r}
+data(wrld_simpl)
+plot(wrld_simpl, xlim=c(-80,70), ylim=c(-80,30), axes=TRUE, col="light yellow")
+
+# restore the box around the map
+box()
+
+# add the points
+points(acgeo$lon, acgeo$lat, col='orange', pch=20, cex=0.75)
+# plot points again to add a border, for better visibility
+points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
+```
+
+```{r}
+ r <- raster(system.file("external/test.grd", package="raster"))
+
+```
+
+
+```{r}
+getData('GADM', country='FRA', level=1)
+
+```
+
 >Data cleaning-majo
+
+```{r}
+acaule[c(303,885),1:10]
+```
+
+
+```{r}
+lonzero = subset(acgeo, lon==0)
+lonzero[, 1:13]
+```
+
 
 >Duplicate records - Frank
 
