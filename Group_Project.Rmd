@@ -23,6 +23,8 @@ rJava: Low-Level R to Java Interface
 
 # Data preparation - due Monday 18th
 
+
+
 >Species occurrence data
 
 >Importing data: Species occurrence data, plot map- majo
@@ -34,7 +36,18 @@ rJava: Low-Level R to Java Interface
 >cross-checking
 
 
->Absence and background points: Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data--Feiya 
+>Absence and background points: 
+
+Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data.
+
+First, there is a common methods to delete all NA values from datae frame. We can use na.omit()function to delete the rows that contains the NA data.
+```{r}
+
+na.omit(df)
+```
+
+The dismo package also have some function to delete NA data from the data frame.
+For example, raster()
  
 # Environmental data Due 25th
 
