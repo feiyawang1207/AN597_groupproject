@@ -10,90 +10,100 @@ output: html_document
 ***
 It is a Group projetc worked by Majo, Frank and Feiya
 
-
-
-
->Introduction: short paragraph and an image
+## Introduction: short paragraph and an image
 
 >Packages to be used: install.packages(c(’raster’, ’rgdal’, ’dismo’, ’rJava’)) 
-Raster: Geographic Data Analysis and Modeling
-Rgdal: Bindings for the 'Geospatial' Data Abstraction Library
-Dismo: Species Distribution Modeling
-rJava: Low-Level R to Java Interface
 
 # Data preparation - due Monday 18th
 
+# Species occurrence data
 
+>1.Upload files
 
->Species occurrence data
+If You have a files, than you can upload it like we did in previous class, using curl package. 
 
-```{r installing packages}
-install.packages("raster")
-install.packages("dismo")
-install.packages("rgdal")
-install.packages("rJava")
+For example:
+
+```{r}
+library (curl)
+#install package curl before this step to load a file from server.
+
+f <- curl("https://github.com/feiyawang1207/AN597_groupproject/blob/master/S_angustifolium.xlsx")
+#load the file in varibale f
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+# read file in d as a dataframe.
+
+head(d)
 ```
 
-Importing data from a database
 
-```{r loading package dismo}
+If you do not have any species distribution data you can get started by downloading data from the Global Biodiversity Inventory Facility (GBIF).Importing data from a database, we use a function called gbif() to download the files from this database. 
+
+```{r}
 library(dismo)
-```
+library(DT)
 
-
-```{r}
-```
-
-
-```{r}
 acaule <- gbif("solanum", "acaule*", geo=FALSE)
+#load the saved S. acaule data from data base
+
+datatable(head(acaule))
+#
 ```
 
-load the saved S. acaule data
+If you want to check how many rows and colums the data frame you have, we use dim() to show the dimension of the dataset.
 ```{r}
-data("acaule")
-```
-how many rows and colums?
+colrow<-dim(acaule)
+# use dim() to get dimension of our dataset
 
-```{r}
-dim(acaule)
-```
+colrow[1]
+#show row numbers
 
-Select the records that have longitude and latitude data
-
-
-```{r}
-colnames(acaule)
+y<-colrow[2]
+#show column number
 ```
 
+In order to drawing a map, we need to find the location by Longitude and latitude from dataset. 
 
-Subetting the data that have longitude and latitude
-
-
+Subetting the data that have longitude and latitude, ingore all the NA values. We use is.na() to test the data that have both longitude and latitude data and make them into a data frame.
 ```{r}
 acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
+#use subset() to seperate those data
+
+datatable(head(acgeo))
+#showing the example data see that have longtitude and lagititude data
+
 dim(acgeo)
+#showing the rows and columns for data frame
 ```
 show some values
-
+# ???
+I don't understand this function.
 ```{r}
 acgeo[1:4, c(1:5,7:10)] #removing locality
 ```
 
->Importing data: Species occurrence data, plot map- majo
+> 2.Importing data: Species occurrence data, plot map
 
+In order to do tha, we need package maptools. 
+
+First, we need to draw a empty map. a variable called wrld_simpl will show a empty world-wide map
 ```{r}
 library(maptools)
+
+data(wrld_simpl)
+x<-plot(wrld_simpl, xlim=c(-80,70), ylim=c(-80,30), axes=TRUE)
+# empty map
 ```
 
 
+Then we need to put data
 ```{r}
+library(maptools)
+
 data(wrld_simpl)
 plot(wrld_simpl, xlim=c(-80,70), ylim=c(-80,30), axes=TRUE, col="light yellow")
-
 # restore the box around the map
 box()
-
 # add the points
 points(acgeo$lon, acgeo$lat, col='orange', pch=20, cex=0.75)
 # plot points again to add a border, for better visibility
@@ -133,20 +143,53 @@ lonzero[, 1:13]
 
 Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data.
 
-First, there is a common methods to delete all NA values from datae frame. We can use na.omit()function to delete the rows that contains the NA data.
-```{r}
+Therefore, if you want to have a non-NA-value data frame for your method, Here is the thing you could do.
 
-na.omit(df)
+First, there is a common methods to delete all NA values from a data frame. We can use na.omit() function to delete the rows that contains the NA data.
+ For example, you only need longtitude and latitude values to draw your map, then, you can take those two columns into a data frame. 
+
+```{r}
+long<-acaule$lon
+#extract column of longtitude
+lati<-acaule$lat
+#extract column of latitude
+d<-cbind(long,lati)
+#combine into a data frame
+colnames(d)<-c("longitude","latitude")
+#name data frame
+
+dim(d)[1]
+#rows number of uncleaning data frame
+
+d[27,]
+#a NA rows in this data frame
+```
+
+Then, you can use na.omit() to delete all NA value from this data frame. 
+```{r}
+clean_d <-na.omit(d)
+#save teh cleaing data frame
+
+dim(clean_d)[1]
+#rows number of cleaning data frame
+
+clean_d[27,]
+#NA have been removed from the previous row.
+
 ```
 
 The dismo package also have some function to delete NA data from the data frame.
 For example, raster()
  
+
+
 # Environmental data Due 25th
 
 >Raster data
 
 >Extracting values from rasters
+
+
 
 # Model fitting, prediction, and evaluation
 >Model fitting
