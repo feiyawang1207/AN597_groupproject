@@ -1,0 +1,233 @@
+---
+title: "Group_Project"
+author: "Feiya Wang"
+date: "11/11/2019"
+output: html_document
+---
+***
+## Group Project--Species Distribution Model
+
+***
+It is a Group projetc worked by Majo, Frank and Feiya
+
+>Introduction: short paragraph and an image
+
+>Packages to be used: install.packages(c(’raster’, ’rgdal’, ’dismo’, ’rJava’)) 
+Raster: Geographic Data Analysis and Modeling
+Rgdal: Bindings for the 'Geospatial' Data Abstraction Library
+Dismo: Species Distribution Modeling
+rJava: Low-Level R to Java Interface
+
+# Data preparation - due Monday 18th
+
+>Species occurrence data
+
+```{r installing packages}
+chooseCRANmirror(graphics=FALSE, ind=1)
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("raster")
+install.packages("dismo")
+install.packages("rgdal")
+install.packages("rJava")
+install.packages("sp")
+```
+
+Importing data from a database
+
+```{r loading package dismo}
+library(dismo)
+library(raster)
+library(sp)
+```
+```{r}
+acaule <- gbif("solanum", "acaule*", geo=FALSE)
+```
+
+load the saved S. acaule data
+```{r}
+data("acaule")
+```
+how many rows and colums?
+
+```{r}
+dim(acaule)
+```
+
+Select the records that have longitude and latitude data
+
+
+```{r}
+colnames(acaule)
+```
+
+
+Subetting the data that have longitude and latitude
+
+
+```{r}
+acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
+dim(acgeo)
+```
+show some values
+
+```{r}
+acgeo[1:4, c(1:5,7:10)] #removing locality
+```
+
+>Importing data: Species occurrence data, plot map- majo
+
+```{r}
+library(maptools)
+gpclibPermit()
+```
+
+```{r}
+data(wrld_simpl)
+plot(wrld_simpl, xlim=c(-80,70), ylim=c(-80,30), axes=TRUE, col="light yellow")
+
+# restore the box around the map
+box()
+
+# add the points
+points(acgeo$lon, acgeo$lat, col='orange', pch=20, cex=0.75)
+# plot points again to add a border, for better visibility
+points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
+```
+
+```{r}
+ r <- raster(system.file("external/test.grd", package="raster"))
+
+```
+
+```{r}
+getData('GADM', country='FRA', level=1)
+
+```
+>Data cleaning-majo
+
+```{r}
+acaule[c(303,885),1:10]
+```
+
+
+```{r}
+lonzero = subset(acgeo, lon==0)
+lonzero[, 1:13]
+```
+
+>Duplicate records - Frank
+
+```{r}
+#which records are duplicates (only for the first 10 columns)?
+dups <- duplicated(lonzero[, 1:10])
+#remove duplicates
+lonzero  <-  lonzero[dups, ]
+lonzero[,1:13]
+```
+
+```{r}
+# differentiating by (sub) species
+# dups2 <- duplicated(acgeo[, c('species', 'lon', 'lat')])
+# ignoring (sub) species and other naming variation
+dups2 <- duplicated(acgeo[, c('lon', 'lat')])
+# number of duplicates
+sum(dups2)
+## [1] 483
+# keep the records that are _not_ duplicated
+acg <- acgeo[!dups2, ]
+```
+
+```{r}
+i <- acg$lon > 0 & acg$lat > 0
+acg$lon[i] <- -1 * acg$lon[i]
+acg$lat[i] <- -1 * acg$lat[i]
+acg <- acg[acg$lon < -50 & acg$lat > -50, ]
+```
+
+>cross-checking
+
+```{r}
+library(sp)
+coordinates(acg) <- ~lon+lat
+crs(acg) <- crs(wrld_simpl)
+class(acg)
+## [1] "SpatialPointsDataFrame"
+## attr(,"package")
+## [1] "sp"
+```
+
+```{r}
+class(wrld_simpl)
+## [1] "SpatialPolygonsDataFrame"
+## attr(,"package")
+## [1] "sp"
+ovr <- over(acg, wrld_simpl)
+```
+
+```{r}
+head(ovr)
+cntr <- ovr$NAME
+```
+
+```{r}
+i <- which(is.na(cntr))
+i
+## integer(0)
+j <- which(cntr != acg$country)
+# for the mismatches, bind the country names of the polygons and points
+cbind(cntr, acg$country)[j,]
+##      cntr
+## [1,] "27"  "Argentina"
+## [2,] "172" "Bolivia"
+## [3,] "172" "Bolivia"
+## [4,] "172" "Bolivia"
+```
+
+```{r}
+plot(acg)
+plot(wrld_simpl, add=T, border='blue', lwd=2)
+points(acg[j, ], col='red', pch=20, cex=2)
+```
+
+>Absence and background points: 
+
+Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data.
+
+First, there is a common methods to delete all NA values from datae frame. We can use na.omit()function to delete the rows that contains the NA data.
+```{r}
+
+na.omit(df)
+```
+
+The dismo package also have some function to delete NA data from the data frame.
+For example, raster()
+ 
+# Environmental data Due 25th
+
+>Raster data
+
+>Extracting values from rasters
+
+# Model fitting, prediction, and evaluation
+>Model fitting
+
+>Model prediction
+
+>Model evaluation
+
+>Types of models
+
+# Generalized Linear Models: example
+
+
+
+
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
