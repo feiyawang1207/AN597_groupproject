@@ -41,7 +41,7 @@ If you do not have any species distribution data you can get started by download
 
 ```{r}
 library(dismo)
-library(DT)
+#library(DT)
 
 acaule <- gbif("solanum", "acaule*", geo=FALSE)
 #load the saved S. acaule data from data base
@@ -69,7 +69,7 @@ Subetting the data that have longitude and latitude, ingore all the NA values. W
 acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
 #use subset() to seperate those data
 
-datatable(head(acgeo))
+#datatable(head(acgeo))
 #showing the example data see that have longtitude and lagititude data
 
 dim(acgeo)
@@ -134,10 +134,82 @@ lonzero[, 1:13]
 ```
 
 
->Duplicate records - Frank
+>Duplicate records: The next function helps to remove duplicates.
 
->cross-checking
+```{r}
+#which records are duplicates (only for the first 10 columns)?
+dups <- duplicated(lonzero[, 1:10])
+#remove duplicates
+lonzero  <-  lonzero[dups, ]
+lonzero[,1:13]
+```
+>Another approach might be to detect duplicates for the same species and some coordinates in the data, even if the records were from collections by different people or in different years (in our case, using species is redundant as we have data for only one species).
 
+```{r}
+# differentiating by (sub) species
+# dups2 <- duplicated(acgeo[, c('species', 'lon', 'lat')])
+# ignoring (sub) species and other naming variation
+dups2 <- duplicated(acgeo[, c('lon', 'lat')])
+# number of duplicates
+sum(dups2)
+## [1] 483
+# keep the records that are _not_ duplicated
+acg <- acgeo[!dups2, ]
+```
+
+>Let’s repatriate the records near Pakistan to Argentina, and remove the records in Brazil, Antarctica, and with longitude=0
+
+```{r}
+i <- acg$lon > 0 & acg$lat > 0
+acg$lon[i] <- -1 * acg$lon[i]
+acg$lat[i] <- -1 * acg$lat[i]
+acg <- acg[acg$lon < -50 & acg$lat > -50, ]
+```
+
+>Cross-checking: 
+
+```{r}
+library(sp)
+coordinates(acg) <- ~lon+lat
+crs(acg) <- crs(wrld_simpl)
+class(acg)
+## [1] "SpatialPointsDataFrame"
+## attr(,"package")
+## [1] "sp"
+```
+
+```{r}
+class(wrld_simpl)
+## [1] "SpatialPolygonsDataFrame"
+## attr(,"package")
+## [1] "sp"
+ovr <- over(acg, wrld_simpl)
+```
+
+```{r}
+head(ovr)
+cntr <- ovr$NAME
+```
+
+```{r}
+i <- which(is.na(cntr))
+i
+## integer(0)
+j <- which(cntr != acg$country)
+# for the mismatches, bind the country names of the polygons and points
+cbind(cntr, acg$country)[j,]
+##      cntr
+## [1,] "27"  "Argentina"
+## [2,] "172" "Bolivia"
+## [3,] "172" "Bolivia"
+## [4,] "172" "Bolivia"
+```
+
+```{r}
+plot(acg)
+plot(wrld_simpl, add=T, border='blue', lwd=2)
+points(acg[j, ], col='red', pch=20, cex=2)
+```
 
 >Absence and background points: 
 
