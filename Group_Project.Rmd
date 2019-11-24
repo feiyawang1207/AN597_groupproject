@@ -115,12 +115,6 @@ points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
 
 ```
 
-
-```{r}
-getData('GADM', country='FRA', level=1)
-
-```
-
 >Data cleaning-majo
 
 ```{r}
@@ -258,6 +252,63 @@ For example, raster()
 # Environmental data Due 25th
 
 >Raster data
+
+A raster consists of a matrix of cells (or pixels) organized into rows and columns (or a grid) where each contains a value representing information. Raster format represents real-world phenomena, data might be discrete or continuous. 
+Discrete data: also are called thematic, categorical or discontinuous data. A discrete object has known and definable boundaries. 
+In species distribution modeling, predictor variables are typically organized as raster (grid) type files. Each predictor should be a ‘raster’ representing a variable of interest. Variables can include climatic, soil, terrain, vegetation, land use, and other variables.
+These data are typically stored in files in some kind of GIS format. Almost all relevant formats can be used (including ESRI grid, geoTiff, netCDF, IDRISI).
+For any particular study the layers should all have the same spatial extent, resolution, origin, and projection. 
+The set of predictor variables (rasters) can be used to make a RasterStack, which is a collection of `RasterLayer’ objects 
+
+A RasterLayer object represents single-layer (variable) raster data. A RasterLayer object always stores a number of fundamental parameters that describe it. These include the number of columns and rows, the spatial extent, and the Coordinate Reference System. In addition, a RasterLayer can store information about the file in which the raster cell values are stored (if there is such a file). A RasterLayer can also hold the raster cell values in memory.
+
+Using the dismo package we are going to create a rasterStack from the list of files are intalled in the package. 
+Fist, we need to get the folder with our files.....
+
+```{r}
+path <- file.path(system.file(package="dismo"), 'ex')
+```
+
+
+
+```{r}
+library(dismo)
+files <- list.files(path, pattern='grd$', full.names=TRUE )
+files
+```
+```{r}
+predictors <- stack(files)
+predictors
+```
+```{r}
+names(predictors)
+```
+
+
+```{r}
+plot(predictors)
+```
+
+
+```{r}
+library(maptools)
+data(wrld_simpl)
+file <- paste(system.file(package="dismo"), "/ex/bradypus.csv", sep="")
+bradypus <- read.table(file,  header=TRUE,  sep=',')
+# we do not need the first column
+bradypus  <- bradypus[,-1]
+```
+
+
+
+```{r}
+# first layer of the RasterStack
+plot(predictors, 1)
+# note the "add=TRUE" argument with plot
+plot(wrld_simpl, add=TRUE)
+# with the points function, "add" is implicit
+points(bradypus, col='blue')
+```
 
 >Extracting values from rasters
 
