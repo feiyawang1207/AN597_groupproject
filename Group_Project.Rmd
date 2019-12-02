@@ -11,13 +11,25 @@ output: html_document
 It is a Group projetc worked by Majo, Frank and Feiya
 
 ## Introduction: short paragraph and an image
+Species distribution modeling (SDM) is also known under other names including climate envelope-modeling, habitat modeling, and (environmental or ecological) niche-modeling. 
+
+The aim of SDM is to estimate the similarity of the conditions at any site to the conditions at the locations of known occurrence (and perhaps of non-occurrence) of a phenomenon. A common application of this method is to predict species ranges with climate data as predictors. 
+
+SDM steps: 
+(1) locations of occurrence of a species (or other phenomenon) are compiled
+(2) values of environmental predictor variables (such as climate) at these locations are extracted from spatial databases
+(3) the environmental values are used to fit a model to estimate similarity to the sites of occurrence, or another measure such as abundance of the species 
+(4) The model is used to predict the variable of interest across the region of interest (and perhaps for a future or past climate).
+Before start it would be useful if you get familiar with spatial data handling as implemented in packages “raster” and “sp”
+
 
 >Packages to be used: install.packages(c(’raster’, ’rgdal’, ’dismo’, ’rJava’)) 
 
-# Data preparation - due Monday 18th
+# Step 1: Data preparation - due Monday 18th
+You need to collect a sufficient number of occurrence records (and absence or abundance, if possible) of the species of interest. You also need to have accurate an relevant environmental data (predictor variables) at sufficient high spatial resolution.
 
-# Species occurrence data
-
+## Species occurrence data
+Importing occurrence data into R is easy. But collecting, georeferencing, and cross-checking coordinate data is tedious
 >1.Upload files
 
 If You have a files, than you can upload it like we did in previous class, using curl package. 
@@ -36,9 +48,14 @@ d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
 head(d)
 ```
 
+> 1.Importing occurrence data
 
-If you do not have any species distribution data you can get started by downloading data from the Global Biodiversity Inventory Facility (GBIF).Importing data from a database, we use a function called gbif() to download the files from this database. 
+If you do not have any species distribution data you can get started by downloading data from the Global Biodiversity Inventory Facility (GBIF).
+Occurrence records: 1.354.603.236
 
+Importing data from a database, we use a function called gbif() to download the files from this database. 
+
+We are going to download the occurrence data from a potato species. Solanum acaule is widespread and common in upland habitats from northern Peru (Dept. Cajamarca), south through Bolivia to northern Argentina (Prov. San Juan), and with one record in northern Chile (Antofagasta Region), on dry rocky hillsides, high puna, among herbs, spiny shrubs and low woods, along streamsides, dry river beds and alluvial cones, (2000) 2400-4700 m in elevation.  IMAGE
 ```{r}
 library(dismo)
 #library(DT)
@@ -64,29 +81,31 @@ y<-colrow[2]
 
 In order to drawing a map, we need to find the location by Longitude and latitude from dataset. 
 
-Subetting the data that have longitude and latitude, ingore all the NA values. We use is.na() to test the data that have both longitude and latitude data and make them into a data frame.
+Subetting the data that have longitude and latitude. Many occurence records may not have geographic coordinates, so you will need to remove those NA values from your dataframe. We use is.na() to test the data that have both longitude and latitude data and make them into a data frame.
 ```{r}
 acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
 #use subset() to seperate those data
 
 #datatable(head(acgeo))
-#showing the example data see that have longtitude and lagititude data
+#showing the example data see that have longtitude and latitude data
 
 dim(acgeo)
 #showing the rows and columns for data frame
 ```
-show some values
+show some values from your dataframe
 # ???
 I don't understand this function.
 ```{r}
 acgeo[1:4, c(1:5,7:10)] #removing locality
 ```
 
-> 2.Importing data: Species occurrence data, plot map
+> 2.Making a map of the ocurrence localities of Solanum acaule
 
-In order to do tha, we need package maptools. 
 
-First, we need to draw a empty map. a variable called wrld_simpl will show a empty world-wide map
+
+In order to do that, we need package maptools. 
+
+First, we need to draw a empty map. a variable called wrld_simpl will show a empty world-wide map. The wrld_simpl dataset contains rough country outlines.
 ```{r}
 library(maptools)
 
@@ -96,7 +115,7 @@ x<-plot(wrld_simpl, xlim=c(-80,70), ylim=c(-80,30), axes=TRUE)
 ```
 
 
-Then we need to put data
+Then we need to add our data points. It is important to make such maps to assure that the points are, at least roughly, in the right location
 ```{r}
 library(maptools)
 
@@ -110,23 +129,33 @@ points(acgeo$lon, acgeo$lat, col='orange', pch=20, cex=0.75)
 points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
 ```
 
-```{r}
+```{r we should remove this}
  r <- raster(system.file("external/test.grd", package="raster"))
 
 ```
 
->Data cleaning-majo
+>3. Data cleaning-majo
 
+Data ‘cleaning’ is particularly important for data sourced from species distribution data warehouses such as GBIF.
+Solanum acaule is a species that occurs in the higher parts of the Andes mountains of southern Peru, Bolivia and northern Argentina. 
+
+IMAGE
+
+Do you see any errors on the map?
+
+There are a few records that map in weird locations. Sometimes is just because a missing minus signs.
+There are two records (rows 303 and 885) that map to the same spot in Antarctica (-76.3, -76.3). The locality description says that is should be in Huarochiri, near Lima, Peru. So the longitude is probably correct, and erroneously copied to the latitude
 ```{r}
 acaule[c(303,885),1:10]
 ```
 
-
+The point in Brazil (record acaule[98,]) should be in soutern Bolivia, so this is probably due to a typo in the longitude.
+There are also three records that have plausible latitudes, but longitudes that are clearly wrong, as they are in the Atlantic Ocean, south of West Africa. It looks like they have a longitude that is zero. In many data-bases you will find values that are ‘zero’ where ‘no data’ was intended. The gbif function (when using the default arguments) sets coordinates that are (0, 0) to NA, but not if one of the coordinates is zero. Let’s see if we find them by searching for records with longitudes of zero.
 ```{r}
 lonzero = subset(acgeo, lon==0)
 lonzero[, 1:13]
 ```
-
+The records are from Bolivia, Peru and Argentina, confirming that coordinates are in error. 
 
 >Duplicate records: The next function helps to remove duplicates.
 
@@ -269,17 +298,22 @@ Fist, we need to get the folder with our files.....
 path <- file.path(system.file(package="dismo"), 'ex')
 ```
 
-
+Now get the names of all the files with extension “.grd” in this folder. The $ sign indicates that the files must end with
+the characters ‘grd’. By using full.names=TRUE, the full path names are retunred.
 
 ```{r}
 library(dismo)
 files <- list.files(path, pattern='grd$', full.names=TRUE )
 files
 ```
+
+Now create a RasterStack of predictor variables.
+
 ```{r}
 predictors <- stack(files)
 predictors
 ```
+
 ```{r}
 names(predictors)
 ```
@@ -289,7 +323,7 @@ names(predictors)
 plot(predictors)
 ```
 
-
+We can also make a plot of a single layer in a RasterStack, and plot some additional data on top of it. First get the world boundaries and the bradypus data:
 ```{r}
 library(maptools)
 data(wrld_simpl)
@@ -299,7 +333,7 @@ bradypus <- read.table(file,  header=TRUE,  sep=',')
 bradypus  <- bradypus[,-1]
 ```
 
-
+Plotting bioclimatic variables from WorldClim database
 
 ```{r}
 # first layer of the RasterStack
@@ -320,6 +354,173 @@ points(bradypus, col='blue')
 >Model prediction
 
 >Model evaluation
+
+Most model types have different measures that can help to assess how good the model
+fits the data. Most statistics or machine learning texts will provide
+some details. For instance, for a GLM one can look at how much deviance is explained, whether there are patterns in the residuals, whether there are points with high leverage and so on. However, since many models are to be used for prediction, much evaluation is focused on how well the model predicts to points not used in model training.
+What do we consider to evaluate a model?
+
+Does the model seem sensible, ecologically?
+Do the fitted functions (the shapes of the modeled relationships) make sense?
+Do the predictions seem reasonable? (map them, and think about them)?
+Are there any spatial patterns in model residuals? 
+
+
+Different measures can be used to evaluate the quality of a prediction, perhaps depending on the goal of the study. Many measures for evaluating models based on presence-absence or presence-only data are ‘threshold dependent’. That means that a threshold must be set first (e.g., 0.5, though 0.5 is rarely a sensible choice – e.g. see Lui et al. 2005). Predicted values above that threshold indicate a prediction of ‘presence’, and values below the threshold indicate ‘absence’. Some measures emphasize the weight of false absences; others give more weight to false presences.
+Much used statistics that are threshold independent are the correlation coefficient and the Area Under the Receiver Operator Curve (AUROC, generally further abbreviated to AUC). AUC is a measure of rank-correlation. In unbiased data, a high AUC indicates that sites with high predicted suitability values tend to be areas of known presence and locations with lower model prediction values tend to be areas where the species is not known to be present (absent or a random point). An AUC score of 0.5 means that the model is as good as a random guess. 
+for a discussion on the use of AUC in the context of presence-only rather than presence/absence data.
+
+Here we illustrate the computation of the correlation coefficient and AUC with two random variables. p (presence) has higher values, and represents the predicted value for 50 known cases (locations) where the species is present, and a (absence) has lower values, and represents the predicted value for 50 known cases (locations) where the species is absent.
+```{r}
+p <- rnorm(50, mean=0.7, sd=0.3)
+a <- rnorm(50, mean=0.4, sd=0.4)
+par(mfrow=c(1, 2))
+plot(sort(p), col='red', pch=21)
+points(sort(a), col='blue', pch=24)
+legend(1, 0.95 * max(a,p), c('presence', 'absence'),
+          pch=c(21,24), col=c('red', 'blue'))
+comb <- c(p,a)
+group <- c(rep('presence', length(p)), rep('absence', length(a)))
+boxplot(comb~group, col=c('blue', 'red'))
+```
+
+We created two variables with random normally distributed values, but with different mean and standard deviation.
+The two variables clearly have different distributions, and the values for ‘presence’ tend to be higher than for ‘absence’. 
+Here is how you can compute the correlation coefficient and the AUC:
+```{r}
+group = c(rep(1, length(p)), rep(0, length(a)))
+cor.test(comb, group)$estimate
+```
+
+
+```{r}
+mv <- wilcox.test(p,a)
+auc <- as.numeric(mv$statistic) / (length(p) * length(a))
+auc
+```
+
+Below we show how you can compute these, and other statistics more conveniently, with the evaluate function in the dismo package. See ?evaluate for info on additional evaluation measures that are available. ROC/AUC can also be computed with the ROCR package.
+```{r}
+e <- evaluate(p=p, a=a)
+class(e)
+
+par(mfrow=c(1, 2))
+density(e)
+boxplot(e, col=c('blue', 'red'))
+```
+
+Back to some real data, presence-only in this case. We’ll divide the data in two random sets, one for training a Bioclim
+model, and one for evaluating the model.
+
+```{r}
+samp <- sample(nrow(sdmdata), round(0.75 * nrow(sdmdata)))
+traindata <- sdmdata[samp,]
+traindata <- traindata[traindata[,1] == 1, 2:9]
+testdata <- sdmdata[-samp,]
+bc <- bioclim(traindata)
+e <- evaluate(testdata[testdata==1,], testdata[testdata==0,], bc)
+e
+```
+
+
+```{r}
+plot(e, 'ROC')
+```
+
+Let’s first create presence and background data.
+
+```{r}
+pres <- sdmdata[sdmdata[,1] == 1, 2:9]
+back <- sdmdata[sdmdata[,1] == 0, 2:9]
+```
+
+The background data will only be used for model testing and does not need to be partitioned. We now partition the data into 5 groups
+
+```{r}
+k <- 5
+group <- kfold(pres, k)
+group[1:10]
+
+unique(group)
+
+```
+Now we can fit and test our model five times. In each run, the records corresponding to one of the five groups is only used to evaluate the model, while the other four groups are only used to fit the model. The results are stored in a list called ‘e’.
+
+```{r}
+e <- list()
+for (i in 1:k) {
+    train <- pres[group != i,]
+    test <- pres[group == i,]
+    bc <- bioclim(train)
+    e[[i]] <- evaluate(p=test, a=back, bc)
+}
+```
+
+We can extract several things from the objects in ‘e’, but let’s restrict ourselves to the AUC values and the “maximum of the sum of the sensitivity (true positive rate) and specificity (true negative rate)” threshold “spec_sens” (this is sometimes uses as a threshold for setting cells to presence or absence).
+
+```{r}
+auc <- sapply(e, function(x){x@auc})
+auc
+```
+
+
+```{r}
+mean(auc)
+
+sapply( e, function(x){ threshold(x)['spec_sens'] } )
+```
+The use of AUC in evaluating SDMs has been criticized (Lobo et al. 2008, Jiménez-Valverde 2011). A particularly sticky problem is that the values of AUC vary with the spatial extent used to select background points. Generally, the larger that extent, the higher the AUC value. Therefore, AUC values are generally biased and cannot be directly compared. Hijmans (2012) suggests that one could remove “spatial sorting bias” (the difference between the distance from testing-presence to training-presence and the distance from testing-absence to training-presence points) through “point-wise distance sampling”.
+
+
+```{r}
+file <- file.path(system.file(package="dismo"), "ex/bradypus.csv")
+bradypus <- read.table(file,  header=TRUE,  sep=',')
+bradypus <- bradypus[,-1]
+presvals <- extract(predictors, bradypus)
+set.seed(0)
+backgr <- randomPoints(predictors, 500)
+nr <- nrow(bradypus)
+s <- sample(nr, 0.25 * nr)
+pres_train <- bradypus[-s, ]
+pres_test <- bradypus[s, ]
+nr <- nrow(backgr)
+set.seed(9)
+s <- sample(nr, 0.25 * nr)
+back_train <- backgr[-s, ]
+back_test <- backgr[s, ]
+```
+ 
+ 
+ 
+```{r}
+sb <- ssb(pres_test, back_test, pres_train)
+sb[,1] / sb[,2]
+```
+
+sb[,1] / sb[,2] is an indicator of spatial sorting bias (SSB). If there is no SSB this value should be 1, in these
+data it is close to zero, indicating that SSB is very strong. Let’s create a subsample in which SSB is removed.
+
+```{r}
+i <- pwdSample(pres_test, back_test, pres_train, n=1, tr=0.1)
+pres_test_pwd <- pres_test[!is.na(i[,1]), ]
+back_test_pwd <- back_test[na.omit(as.vector(i)), ]
+sb2 <- ssb(pres_test_pwd, back_test_pwd, pres_train)
+sb2[1]/ sb2[2]
+```
+
+Spatial sorting bias is much reduced now; notice how the AUC dropped!
+
+```{r}
+bc <- bioclim(predictors, pres_train)
+evaluate(bc, p=pres_test, a=back_test, x=predictors)
+```
+
+
+
+```{r}
+evaluate(bc, p=pres_test_pwd, a=back_test_pwd, x=predictors)
+```
+
 
 >Types of models
 
