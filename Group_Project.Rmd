@@ -39,7 +39,10 @@ For example:
 ```{r}
 library (curl)
 #install package curl before this step to load a file from server.
+```
 
+
+```{r}
 f <- curl("https://github.com/feiyawang1207/AN597_groupproject/blob/master/S_angustifolium.xlsx")
 #load the file in varibale f
 d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
