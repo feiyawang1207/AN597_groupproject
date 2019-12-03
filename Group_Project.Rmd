@@ -5,31 +5,39 @@ date: "11/11/2019"
 output: html_document
 ---
 ***
-## Group Project--Species Distribution Model
+## **Group Project--Species Distribution Model**
 
 ***
 It is a Group projetc worked by Majo, Frank and Feiya
 
-## Introduction: short paragraph and an image
+# Introduction: short paragraph and an image
+
 Species distribution modeling (SDM) is also known under other names including climate envelope-modeling, habitat modeling, and (environmental or ecological) niche-modeling. 
 
 The aim of SDM is to estimate the similarity of the conditions at any site to the conditions at the locations of known occurrence (and perhaps of non-occurrence) of a phenomenon. A common application of this method is to predict species ranges with climate data as predictors. 
 
 SDM steps: 
+
 (1) locations of occurrence of a species (or other phenomenon) are compiled
+
 (2) values of environmental predictor variables (such as climate) at these locations are extracted from spatial databases
+
 (3) the environmental values are used to fit a model to estimate similarity to the sites of occurrence, or another measure such as abundance of the species 
+
 (4) The model is used to predict the variable of interest across the region of interest (and perhaps for a future or past climate).
 Before start it would be useful if you get familiar with spatial data handling as implemented in packages “raster” and “sp”
 
 
->Packages to be used: install.packages(c(’raster’, ’rgdal’, ’dismo’, ’rJava’)) 
+Packages to be used: *raster*, *rgdal*, *dismo*, *rJava* 
 
-# Step 1: Data preparation - due Monday 18th
+# Step 1: Data preparation
+
 You need to collect a sufficient number of occurrence records (and absence or abundance, if possible) of the species of interest. You also need to have accurate an relevant environmental data (predictor variables) at sufficient high spatial resolution.
 
-## Species occurrence data
+# Step 2: Import Species occurrence data
+
 Importing occurrence data into R is easy. But collecting, georeferencing, and cross-checking coordinate data is tedious
+
 >1.Upload files
 
 If You have a files, than you can upload it like we did in previous class, using curl package. 
@@ -39,19 +47,17 @@ For example:
 ```{r}
 library (curl)
 #install package curl before this step to load a file from server.
-```
+library(knitr)
+# to make nice data table. 
 
-
-```{r}
-f <- curl("https://github.com/feiyawang1207/AN597_groupproject/blob/master/S_angustifolium.xlsx")
+f <- curl("https://raw.githubusercontent.com/feiyawang1207/AN597_groupproject/master/S_angustifolium.csv")
 #load the file in varibale f
-d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+d <- read.csv(f, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 # read file in d as a dataframe.
-
-head(d)
+kable(head(d))
 ```
 
-> 1.Importing occurrence data
+>2.Importing occurrence data
 
 If you do not have any species distribution data you can get started by downloading data from the Global Biodiversity Inventory Facility (GBIF).
 Occurrence records: 1.354.603.236
@@ -61,13 +67,12 @@ Importing data from a database, we use a function called gbif() to download the 
 We are going to download the occurrence data from a potato species. Solanum acaule is widespread and common in upland habitats from northern Peru (Dept. Cajamarca), south through Bolivia to northern Argentina (Prov. San Juan), and with one record in northern Chile (Antofagasta Region), on dry rocky hillsides, high puna, among herbs, spiny shrubs and low woods, along streamsides, dry river beds and alluvial cones, (2000) 2400-4700 m in elevation.  IMAGE
 ```{r}
 library(dismo)
-#library(DT)
+library(knitr)
 
 acaule <- gbif("solanum", "acaule*", geo=FALSE)
 #load the saved S. acaule data from data base
 
-datatable(head(acaule))
-#
+kable(head(acaule))
 ```
 
 If you want to check how many rows and colums the data frame you have, we use dim() to show the dimension of the dataset.
@@ -95,16 +100,15 @@ acgeo <- subset(acaule, !is.na(lon) & !is.na(lat))
 dim(acgeo)
 #showing the rows and columns for data frame
 ```
-show some values from your dataframe
-# ???
-I don't understand this function.
+
 ```{r}
 acgeo[1:4, c(1:5,7:10)] #removing locality
 ```
 
-> 2.Making a map of the ocurrence localities of Solanum acaule
 
+>3. Making a map of the ocurrence localities 
 
+We use solanum acaule as an example
 
 In order to do that, we need package maptools. 
 
@@ -134,10 +138,9 @@ points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
 
 ```{r we should remove this}
  r <- raster(system.file("external/test.grd", package="raster"))
-
 ```
 
->3. Data cleaning-majo
+>4. Data cleaning
 
 Data ‘cleaning’ is particularly important for data sourced from species distribution data warehouses such as GBIF.
 Solanum acaule is a species that occurs in the higher parts of the Andes mountains of southern Peru, Bolivia and northern Argentina. 
@@ -160,7 +163,8 @@ lonzero[, 1:13]
 ```
 The records are from Bolivia, Peru and Argentina, confirming that coordinates are in error. 
 
->Duplicate records: The next function helps to remove duplicates.
+
+>5.Duplicate records: The next function helps to remove duplicates.
 
 ```{r}
 #which records are duplicates (only for the first 10 columns)?
@@ -169,7 +173,8 @@ dups <- duplicated(lonzero[, 1:10])
 lonzero  <-  lonzero[dups, ]
 lonzero[,1:13]
 ```
->Another approach might be to detect duplicates for the same species and some coordinates in the data, even if the records were from collections by different people or in different years (in our case, using species is redundant as we have data for only one species).
+
+Another approach might be to detect duplicates for the same species and some coordinates in the data, even if the records were from collections by different people or in different years (in our case, using species is redundant as we have data for only one species).
 
 ```{r}
 # differentiating by (sub) species
@@ -183,7 +188,7 @@ sum(dups2)
 acg <- acgeo[!dups2, ]
 ```
 
->Let’s repatriate the records near Pakistan to Argentina, and remove the records in Brazil, Antarctica, and with longitude=0
+Let’s repatriate the records near Pakistan to Argentina, and remove the records in Brazil, Antarctica, and with longitude=0
 
 ```{r}
 i <- acg$lon > 0 & acg$lat > 0
@@ -192,7 +197,7 @@ acg$lat[i] <- -1 * acg$lat[i]
 acg <- acg[acg$lon < -50 & acg$lat > -50, ]
 ```
 
->Cross-checking: 
+>6. Cross-checking: 
 
 ```{r}
 library(sp)
@@ -224,11 +229,7 @@ i
 j <- which(cntr != acg$country)
 # for the mismatches, bind the country names of the polygons and points
 cbind(cntr, acg$country)[j,]
-##      cntr
-## [1,] "27"  "Argentina"
-## [2,] "172" "Bolivia"
-## [3,] "172" "Bolivia"
-## [4,] "172" "Bolivia"
+
 ```
 
 ```{r}
@@ -237,14 +238,17 @@ plot(wrld_simpl, add=T, border='blue', lwd=2)
 points(acg[j, ], col='red', pch=20, cex=2)
 ```
 
->Absence and background points: 
+
+# Step 3: Deal with absence and background points 
 
 Some of the early species distribution model algorithms, such as Bioclim and Domain only use ’presence’ data in the modeling process. Other methods also use ’absence’ data or ’background’ data.
 
-Therefore, if you want to have a non-NA-value data frame for your method, Here is the thing you could do.
+>1. Absent data
+
+If you want to have a non-NA-value data frame for your method, Here is the thing you could do.
 
 First, there is a common methods to delete all NA values from a data frame. We can use na.omit() function to delete the rows that contains the NA data.
- For example, you only need longtitude and latitude values to draw your map, then, you can take those two columns into a data frame. 
+For example, you only need longtitude and latitude values to draw your map, then, you can take those two columns into a data frame. 
 
 ```{r}
 long<-acaule$lon
@@ -276,19 +280,124 @@ clean_d[27,]
 
 ```
 
-The dismo package also have some function to delete NA data from the data frame.
-For example, raster()
- 
+A simple way to do this is filter function: filter() in dplyr package.
+For example:
+```{r}
+library(dplyr)
+new_d<-filter(acaule, lon !="NA" & lat !="NA" )
+#new variable to store the data frame.
+summary(is.na(new_d$lon))
+#use is.na() to check if there is remaining NA in longitude column.
+```
+
+>2. Backgroud data
+
+Background data  are not attempting to guess at absence locations, but rather to characterize environments in the study region. In this sense, background is the same, irrespective of where the species has been found.
+
+Background data establishes the environmental domain of the study, whilst presence data should establish under which conditions a species is more likely to be present than on average. A closely related but different concept, that of “pseudo-absences”, is also used for generating the non-presence class for logistic models. In this case, researchers sometimes try to guess where absences might occur – they may sample the whole region except at presence locations, or they might sample at places unlikely to be suitable for the species. We prefer the background concept because it requires fewer assumptions and has some coherent statistical methods for dealing with the “overlap” between presence and background points.
 
 
-# Environmental data Due 25th
+In the example below, we first get the list of filenames with the predictor raster data (discussed in detail in the next section raster). We use a raster as a ‘mask’ in the randomPoints function such that the background points are from the same geographic area, and only for places where there are values (land, in our case).
+
+```{r}
+library(dismo)
+# get the file names
+files <- list.files(path=paste(system.file(package="dismo"), '/ex',
+                       sep=''),  pattern='grd',  full.names=TRUE )
+# we use the first file to create a RasterLayer
+mask <- raster(files[1])
+# select 500 random points
+
+set.seed(1963)
+# set seed to assure that the examples will always have the same random sample.
+
+bg <- randomPoints(mask, 500 )
+
+plot(!is.na(mask), legend=FALSE)
+
+points(bg, cex=0.5)
+```
+
+```{r}
+# now we repeat the sampling, but limit the area of sampling using a spatial extent
+e <- extent(-80, -53, -39, -22)
+bg2 <- randomPoints(mask, 50, ext=e)
+#limit point for longitude -39~-22, latitude -80~-53
+
+plot(!is.na(mask), legend=FALSE)
+plot(e, add=TRUE, col='red')
+points(bg2, cex=0.5)
+
+```
+
+
+There are several approaches one could use to sample ‘pseudo-absence’ points from more restricted area than ‘background’.
+We first read the cleaned and subsetted S. acaule data that we produced in the previous chapter from the csv file that comes with dismo:
+```{r}
+file <- paste(system.file(package="dismo"), '/ex/acaule.csv', sep='')
+ac <- read.csv(file)
+#load the cleaned data file
+
+coordinates(ac) <- ~lon+lat
+projection(ac) <- CRS('+proj=longlat +datum=WGS84')
+#create a Spatial Points Data Frame
+```
+
+
+We first create a ‘circles’ model (see the chapter about geographic models), using an arbitrary radius of 50 km. Circles() is a function from rgeos package.
+```{r}
+library(rgeos)
+
+x <- circles(ac, d=50000, lonlat=TRUE)
+# circles with a radius of 50 km
+pol <- polygons(x)
+
+samp1 <- spsample(pol, 250, type='random', iter=25)
+# sample randomly from all circles
+
+cells <- cellFromXY(mask, samp1)
+length(cells)
+
+cells <- unique(cells)
+# get unique cells
+length(cells)
+
+xy <- xyFromCell(mask, cells)
+plot(pol, axes=TRUE)
+points(xy, cex=0.75, pch=20, col='blue')
+#make a plot to see results
+```
+
+A similar results could be produced via raster function extract()
+```{r}
+# extract cell numbers for the circles
+v <- extract(mask, x@polygons, cellnumbers=T)
+# use rbind to combine the elements in list v
+v <- do.call(rbind, v)
+# get unique cell numbers from which you could sample
+v <- unique(v[,1])
+head(v)
+# to display the results
+
+m <- mask
+m[] <- NA
+m[v] <- 1
+plot(m, ext=extent(x@polygons)+1)
+plot(x@polygons, add=T)
+# make a plot for results,
+```
+
+# step 4: Use R package Raster to analysis data
 
 >Raster data
 
 A raster consists of a matrix of cells (or pixels) organized into rows and columns (or a grid) where each contains a value representing information. Raster format represents real-world phenomena, data might be discrete or continuous. 
 Discrete data: also are called thematic, categorical or discontinuous data. A discrete object has known and definable boundaries. 
+
 In species distribution modeling, predictor variables are typically organized as raster (grid) type files. Each predictor should be a ‘raster’ representing a variable of interest. Variables can include climatic, soil, terrain, vegetation, land use, and other variables.
+
 These data are typically stored in files in some kind of GIS format. Almost all relevant formats can be used (including ESRI grid, geoTiff, netCDF, IDRISI).
+
 For any particular study the layers should all have the same spatial extent, resolution, origin, and projection. 
 The set of predictor variables (rasters) can be used to make a RasterStack, which is a collection of `RasterLayer’ objects 
 
@@ -315,14 +424,7 @@ Now create a RasterStack of predictor variables.
 ```{r}
 predictors <- stack(files)
 predictors
-```
-
-```{r}
 names(predictors)
-```
-
-
-```{r}
 plot(predictors)
 ```
 
@@ -347,16 +449,112 @@ plot(wrld_simpl, add=TRUE)
 points(bradypus, col='blue')
 ```
 
+
 >Extracting values from rasters
 
+We now have a set of predictor variables (rasters) and occurrence points. The next step is to extract the values of the predictors at the locations of the points. (This step can be skipped for the modeling methods that are implemented in the dismo package). This is a very straightforward thing to do using the ‘extract’ function from the raster package.
+```{r}
+presvals <- extract(predictors, bradypus)
+# setting random seed to always create the same
+# random set of points for this example
+set.seed(0)
+#Set the seed of R's random number generator, which is useful for creating simulations or random objects that can be reproduced
+
+backgr <- randomPoints(predictors, 500)
+#setting for backgroud
+
+absvals <- extract(predictors, backgr)
+#extract values
+
+pb <- c(rep(1, nrow(presvals)), rep(0, nrow(absvals)))
+
+sdmdata <- data.frame(cbind(pb, rbind(presvals, absvals)))
+
+sdmdata[,'biome'] = as.factor(sdmdata[,'biome'])
+
+head(sdmdata)
+tail(sdmdata)
+
+summary(sdmdata)
+
+```
+
+To visually investigate colinearity in the environmental data (at the presence and background points) you can use a pairs plot.
+```{r}
+pairs(sdmdata[,2:5], cex=0.1)
+```
+
+# Step 5: Picking models
+
+A large number of algorithms has been used in species distribution modeling. They can be classified as ‘profile’, ‘regression’, and ‘machine learning’ methods. Profile methods only consider ‘presence’ data, not absence or background data. Regression and machine learning methods use both presence and absence or background data. The distinction between regression and machine learning methods is not sharp, but it is perhaps still useful as way to classify models. Another distinction that one can make is between presence-only and presence-absence models. Profile methods are always presence-only, other methods can be either, depending if they are used with survey-absence or with pseudo-absence/background data. An entirely different class of models consists of models that only, or primarily, use the geographic location of known occurrences, and do not rely on the values of predictor variables at these locations. We refer to these models as ‘geographic models’.
+
+>Example: Generalized Linear Models
+
+A generalized linear model (GLM) is a generalization of ordinary least squares regression. Models are fit using maximum likelihood and by allowing the linear model to be related to the response variable via a link function and by allowing the magnitude of the variance of each measurement to be a function of its predicted value. Depending on how a GLM is specified it can be equivalent to (multiple) linear regression, logistic regression or Poisson regression
 
 
-# Model fitting, prediction, and evaluation
->Model fitting
+In R, GLM is implemented in the ‘glm’ function, and the link function and error distribution are specified with the ‘family’ argument. Examples are:
 
->Model prediction
+family = binomial(link = "logit")
 
->Model evaluation
+family = poisson(link = "log")
+
+Here we fit two basic glm models. The models need to be fit with presence and absence (background) data. With the exception of ‘maxent’, we cannot fit the model with a RasterStack and points. Instead, we need to extract the environmental data values ourselves, and fit the models with these values.
+
+```{r,include=FALSE}
+pred_nf <- dropLayer(predictors, 'biome')
+group <- kfold(bradypus, 5)
+pres_train <- bradypus[group != 1, ]
+pres_test <- bradypus[group == 1, ]
+ext <- extent(-90, -32, -33, 23)
+set.seed(10)
+backg <- randomPoints(pred_nf, n=1000, ext=ext, extf = 1.25)
+colnames(backg) = c('lon', 'lat')
+group <- kfold(backg, 5)
+backg_train <- backg[group != 1, ]
+backg_test <- backg[group == 1, ]
+train <- rbind(pres_train, backg_train)
+pb_train <- c(rep(1, nrow(pres_train)), rep(0, nrow(backg_train)))
+envtrain <- extract(predictors, train)
+envtrain <- data.frame( cbind(pa=pb_train, envtrain) )
+envtrain[,'biome'] = factor(envtrain[,'biome'], levels=1:14)
+
+testpres <- data.frame( extract(predictors, pres_test) )
+testbackg <- data.frame( extract(predictors, backg_test) )
+testpres[ ,'biome'] = factor(testpres[ ,'biome'], levels=1:14)
+testbackg[ ,'biome'] = factor(testbackg[ ,'biome'], levels=1:14)
+```
+
+```{r}
+#first example
+gm1 <- glm(pa ~ bio1 + bio5 + bio6 + bio7 + bio8 + bio12 + bio16 + bio17,
+            family = binomial(link = "logit"), data=envtrain)
+summary(gm1)
+
+coef(gm1)
+
+#second example
+gm2 <- glm(pa ~ bio1+bio5 + bio6 + bio7 + bio8 + bio12 + bio16 + bio17,
+            family = gaussian(link = "identity"), data=envtrain)
+evaluate(testpres, testbackg, gm1)
+
+ge2 <- evaluate(testpres, testbackg, gm2)
+ge2
+
+#show as a plot graph
+pg <- predict(predictors, gm2, ext=ext)
+par(mfrow=c(1,2))
+plot(pg, main='GLM/gaussian, raw values')
+plot(wrld_simpl, add=TRUE, border='dark grey')
+tr <- threshold(ge2, 'spec_sens')
+plot(pg > tr, main='presence/absence')
+plot(wrld_simpl, add=TRUE, border='dark grey')
+points(pres_train, pch='+')
+points(backg_train, pch='-', cex=0.25)
+```
+
+
+# Step 6: Model evaluation
 
 Most model types have different measures that can help to assess how good the model
 fits the data. Most statistics or machine learning texts will provide
@@ -370,8 +568,10 @@ Are there any spatial patterns in model residuals?
 
 
 Different measures can be used to evaluate the quality of a prediction, perhaps depending on the goal of the study. Many measures for evaluating models based on presence-absence or presence-only data are ‘threshold dependent’. That means that a threshold must be set first (e.g., 0.5, though 0.5 is rarely a sensible choice – e.g. see Lui et al. 2005). Predicted values above that threshold indicate a prediction of ‘presence’, and values below the threshold indicate ‘absence’. Some measures emphasize the weight of false absences; others give more weight to false presences.
+
 Much used statistics that are threshold independent are the correlation coefficient and the Area Under the Receiver Operator Curve (AUROC, generally further abbreviated to AUC). AUC is a measure of rank-correlation. In unbiased data, a high AUC indicates that sites with high predicted suitability values tend to be areas of known presence and locations with lower model prediction values tend to be areas where the species is not known to be present (absent or a random point). An AUC score of 0.5 means that the model is as good as a random guess. 
-for a discussion on the use of AUC in the context of presence-only rather than presence/absence data.
+
+For a discussion on the use of AUC in the context of presence-only rather than presence/absence data.
 
 Here we illustrate the computation of the correlation coefficient and AUC with two random variables. p (presence) has higher values, and represents the predicted value for 50 known cases (locations) where the species is present, and a (absence) has lower values, and represents the predicted value for 50 known cases (locations) where the species is absent.
 ```{r}
@@ -523,18 +723,6 @@ evaluate(bc, p=pres_test, a=back_test, x=predictors)
 ```{r}
 evaluate(bc, p=pres_test_pwd, a=back_test_pwd, x=predictors)
 ```
-
-
->Types of models
-
-# Generalized Linear Models: example
-
-
-
-
-
-
-
 
 
 ```{r setup, include=FALSE}
