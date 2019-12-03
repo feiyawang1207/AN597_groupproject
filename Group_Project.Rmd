@@ -2,7 +2,11 @@
 title: "Group_Project"
 author: "Feiya Wang"
 date: "11/11/2019"
-output: html_document
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
 ---
 ***
 ## **Group Project--Species Distribution Model**
@@ -11,6 +15,12 @@ output: html_document
 It is a Group projetc worked by Majo, Frank and Feiya
 
 # Introduction: short paragraph and an image
+
+<div class="panel panel-info">
+<div class="panel-body">
+
+
+In this module we provide a short summary to species distribution modelling in R. This module will cover a brief overview of the concept of species distribution modelling and the basic modelling steps. 
 
 Species distribution modeling (SDM) is also known under other names including climate envelope-modeling, habitat modeling, and (environmental or ecological) niche-modeling. 
 
@@ -25,14 +35,27 @@ SDM steps:
 (3) the environmental values are used to fit a model to estimate similarity to the sites of occurrence, or another measure such as abundance of the species 
 
 (4) The model is used to predict the variable of interest across the region of interest (and perhaps for a future or past climate).
-Before start it would be useful if you get familiar with spatial data handling as implemented in packages “raster” and “sp”
 
+Notes: Before you begin you will need to install the following packages and their dependencies:
 
-Packages to be used: *raster*, *rgdal*, *dismo*, *rJava* 
+* dismo
+* raster
+* rJava
+* rgdal
+* rgbif
+
+Follow a brief description of the main packages that we will use in this module: dismo (="distribution modeling"), and raster (="geographic data analysis and modelling"), and each one of them has a set of functions that enable to modelling species distribution in geographic and spatial contexts
+
+</div>
+</div>
+ 
 
 # Step 1: Data preparation
 
 You need to collect a sufficient number of occurrence records (and absence or abundance, if possible) of the species of interest. You also need to have accurate an relevant environmental data (predictor variables) at sufficient high spatial resolution.
+
+![](https://media.giphy.com/media/4FQMuOKR6zQRO/giphy.gif)
+
 
 # Step 2: Import Species occurrence data
 
@@ -59,12 +82,13 @@ kable(head(d))
 
 >2.Importing occurrence data
 
-If you do not have any species distribution data you can get started by downloading data from the Global Biodiversity Inventory Facility (GBIF).
-Occurrence records: 1.354.603.236
+If you do not have any species distribution data you can get started by downloading data from the [Global Biodiversity Inventory Facility (GBIF)!](https://www.gbif.org)
+There you can find _1.354.603.236_ Occurrence records
 
-Importing data from a database, we use a function called gbif() to download the files from this database. 
+To importing data from a database, we use a function called [gbif ()!](https://www.rdocumentation.org/packages/dismo/versions/1.1-4/topics/gbif) to download the files from [GBIF!](https://www.gbif.org) database. 
 
-We are going to download the occurrence data from a potato species. Solanum acaule is widespread and common in upland habitats from northern Peru (Dept. Cajamarca), south through Bolivia to northern Argentina (Prov. San Juan), and with one record in northern Chile (Antofagasta Region), on dry rocky hillsides, high puna, among herbs, spiny shrubs and low woods, along streamsides, dry river beds and alluvial cones, (2000) 2400-4700 m in elevation.  IMAGE
+We are going to download the occurrence data from a potato species. *Solanum acaule* is widespread and common in upland habitats from northern Peru (Dept. Cajamarca), south through Bolivia to northern Argentina (Prov. San Juan), and with one record in northern Chile (Antofagasta Region)
+
 ```{r}
 library(dismo)
 library(knitr)
@@ -75,7 +99,7 @@ acaule <- gbif("solanum", "acaule*", geo=FALSE)
 kable(head(acaule))
 ```
 
-If you want to check how many rows and colums the data frame you have, we use dim() to show the dimension of the dataset.
+If you want to check how many rows and colums the data frame you have, we use [dim ()!](https://www.rdocumentation.org/packages/base/versions/3.6.1/topics/dimto) to show the dimension of the dataset.
 ```{r}
 colrow<-dim(acaule)
 # use dim() to get dimension of our dataset
@@ -112,7 +136,8 @@ We use solanum acaule as an example
 
 In order to do that, we need package maptools. 
 
-First, we need to draw a empty map. a variable called wrld_simpl will show a empty world-wide map. The wrld_simpl dataset contains rough country outlines.
+First, we need to draw a empty map. a variable called [wrld_simpl!](https://www.rdocumentation.org/packages/maptools/versions/0.9-8/topics/wrld_simpl) will show a empty world-wide map. The wrld_simpl dataset contains rough country outlines.
+
 ```{r}
 library(maptools)
 
@@ -142,15 +167,14 @@ points(acgeo$lon, acgeo$lat, col='red', cex=0.75)
 
 >4. Data cleaning
 
+
+![](https://media.giphy.com/media/3ohhwxOBaHjxVgEmKA/giphy.gif)
+
 Data ‘cleaning’ is particularly important for data sourced from species distribution data warehouses such as GBIF.
 Solanum acaule is a species that occurs in the higher parts of the Andes mountains of southern Peru, Bolivia and northern Argentina. 
 
-IMAGE
+We imported more than seven thousand records, but not all of these are usable because of various issues. This species is distributed mainly in the Andes mountains of southern Peru, Bolivia and northern Argentina, but as you can see in the previous map there are records in other countries and even in the Antartica. In order to clean this data we will need to: a) avoid false identifications, b) use only specimens collected in a period relevant to the climate data we will be utilizing, and c) have reliable locational certainty (the cleaning will depend of the species we are modelling and the data availability). 
 
-Do you see any errors on the map?
-
-There are a few records that map in weird locations. Sometimes is just because a missing minus signs.
-There are two records (rows 303 and 885) that map to the same spot in Antarctica (-76.3, -76.3). The locality description says that is should be in Huarochiri, near Lima, Peru. So the longitude is probably correct, and erroneously copied to the latitude
 ```{r}
 acaule[c(303,885),1:10]
 ```
@@ -161,7 +185,21 @@ There are also three records that have plausible latitudes, but longitudes that 
 lonzero = subset(acgeo, lon==0)
 lonzero[, 1:13]
 ```
-The records are from Bolivia, Peru and Argentina, confirming that coordinates are in error. 
+
+The records might come from different sources, sometimes from museum collections or zoos. Be sure to choose only the kind of records you really want
+```{r}
+unique(acaule$basisOfRecord)#if you want to know origin of your records.
+```
+
+```{r}
+#You can either decide to work with specimens stored only in  scientific collections or include all records in your analysis.
+acaule1 <- subset(acaule,
+    basisOfRecord=="specimen" |
+    basisOfRecord=="unknown" |
+    basisOfRecord=="living"
+    )
+nrow(acaule1)
+```
 
 
 >5.Duplicate records: The next function helps to remove duplicates.
@@ -255,6 +293,7 @@ long<-acaule$lon
 #extract column of longtitude
 lati<-acaule$lat
 #extract column of latitude
+
 d<-cbind(long,lati)
 #combine into a data frame
 colnames(d)<-c("longitude","latitude")
@@ -488,6 +527,18 @@ pairs(sdmdata[,2:5], cex=0.1)
 
 A large number of algorithms has been used in species distribution modeling. They can be classified as ‘profile’, ‘regression’, and ‘machine learning’ methods. Profile methods only consider ‘presence’ data, not absence or background data. Regression and machine learning methods use both presence and absence or background data. The distinction between regression and machine learning methods is not sharp, but it is perhaps still useful as way to classify models. Another distinction that one can make is between presence-only and presence-absence models. Profile methods are always presence-only, other methods can be either, depending if they are used with survey-absence or with pseudo-absence/background data. An entirely different class of models consists of models that only, or primarily, use the geographic location of known occurrences, and do not rely on the values of predictor variables at these locations. We refer to these models as ‘geographic models’.
 
+>Profile model:
+
+Bioclim, Domain, and Mahal are methods from profile mothods.These methods are implemented in the dismo package, and the procedures to use these models are the same for all three.
+
+>Regression model:
+
+We lean classic regression model from class. it is very similar here. Models are fit using maximum likelihood and by allowing the model to be related to the response variable via a link function and by allowing the magnitude of the variance of each measurement to be a function of its predicted value 
+
+>Machine learning models:
+
+Machine learning models are non-parametric flexible regression models. Methods include Artifical Neural Networks (ANN), Random Forests, Boosted Regression Trees, and Support Vector Machines. Through the dismo package you can also use the Maxent program, that implements the most widely used method (maxent) in species distribution modeling.
+
 >Example: Generalized Linear Models
 
 A generalized linear model (GLM) is a generalization of ordinary least squares regression. Models are fit using maximum likelihood and by allowing the linear model to be related to the response variable via a link function and by allowing the magnitude of the variance of each measurement to be a function of its predicted value. Depending on how a GLM is specified it can be equivalent to (multiple) linear regression, logistic regression or Poisson regression
@@ -495,9 +546,9 @@ A generalized linear model (GLM) is a generalization of ordinary least squares r
 
 In R, GLM is implemented in the ‘glm’ function, and the link function and error distribution are specified with the ‘family’ argument. Examples are:
 
-family = binomial(link = "logit")
+*family = binomial(link = "logit")
 
-family = poisson(link = "log")
+*family = poisson(link = "log")
 
 Here we fit two basic glm models. The models need to be fit with presence and absence (background) data. With the exception of ‘maxent’, we cannot fit the model with a RasterStack and points. Instead, we need to extract the environmental data values ourselves, and fit the models with these values.
 
@@ -724,6 +775,10 @@ evaluate(bc, p=pres_test, a=back_test, x=predictors)
 evaluate(bc, p=pres_test_pwd, a=back_test_pwd, x=predictors)
 ```
 
+# References
+1. Hijmans RJ, Elith J (2012) Species distribution modeling with R. http://cran.r-project.org/web/packages/dismo/vignettes/dm.pdf.
+
+2. Elith, J., C.H. Graham, R.P. Anderson, M. Dudik, S. Ferrier, A. Guisan, R.J. Hijmans, F. Huettmann, J. Leathwick, A. Lehmann, J. Li, L.G. Lohmann, B. Loiselle, G. Manion, C. Moritz, M. Nakamura, Y. Nakazawa, J. McC. Overton, A.T. Peterson, S. Phillips, K. Richardson, R. Scachetti-Pereira, R. Schapire, J. Soberon, S. Williams, M. Wisz and N. Zimmerman, 2006. Novel methods improve prediction of species’ distributions from occurrence data. Ecography 29: 129-151.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
